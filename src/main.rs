@@ -1,3 +1,13 @@
+use clap::Parser;
+
+use crate::args::Command;
+
+mod args;
+
 fn main() {
-    println!("Welcome to Triton CLI!\nWork in Progress…");
+    match Command::parse() {
+        Command::Run(..) => {}
+        Command::Prove { .. } => {}
+        Command::Verify(..) => {}
+    }
 }

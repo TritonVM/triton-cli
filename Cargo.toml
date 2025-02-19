@@ -19,6 +19,7 @@ license = false
 eula = false
 
 [dependencies]
+clap = { version = "4.5.30", features = ["derive"] }
 
 # The profile that 'dist' will build with
 [profile.dist]
