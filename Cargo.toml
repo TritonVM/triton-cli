@@ -12,4 +12,15 @@ homepage = "https://triton-vm.org/"
 repository = "https://github.com/TritonVM/triton-cli"
 documentation = "https://docs.rs/triton-cli/"
 
+[package.metadata.wix]
+upgrade-guid = "55460440-AE28-4DF9-B7A1-B6768E11C11C"
+path-guid = "6DBFD435-94D6-4810-9001-92FD6565CE0F"
+license = false
+eula = false
+
 [dependencies]
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
