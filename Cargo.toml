@@ -21,6 +21,12 @@ eula = false
 [dependencies]
 clap = { version = "4.5.30", features = ["derive"] }
 
+[dev-dependencies]
+assert_cmd = "2.0.16"
+itertools = "0.14.0"
+predicates = "3.1.3"
+tempfile = "3.17.1"
+
 # The profile that 'dist' will build with
 [profile.dist]
 inherits = "release"
