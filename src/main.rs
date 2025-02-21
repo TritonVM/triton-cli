@@ -21,6 +21,8 @@ use crate::args::SeparateFilesRunArgs;
 mod args;
 
 fn main() -> Result<ExitCode> {
+    human_panic::setup_panic!();
+
     match Command::parse() {
         Command::Run(args) => run(args),
         Command::Prove { args, artifacts } => prove(args, artifacts),
