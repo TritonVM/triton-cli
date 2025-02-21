@@ -1,5 +1,10 @@
 # Triton CLI
 
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![GitHub CI](https://github.com/TritonVM/triton-cli/actions/workflows/main.yml/badge.svg)](https://github.com/TritonVM/triton-cli/actions)
+[![crates.io](https://img.shields.io/crates/v/triton-cli.svg)](https://crates.io/crates/triton-cli)
+[![Coverage Status](https://coveralls.io/repos/github/TritonVM/triton-cli/badge.svg?branch=main)](https://coveralls.io/github/TritonVM/triton-cli?branch=main)
+
 Command Line Interface (CLI) for the [Zero-Knowledge Virtual Machine Triton](https://triton-vm.org).
 Triton CLI lets you
 
