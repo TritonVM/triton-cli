@@ -4,6 +4,12 @@ use std::ops::DerefMut;
 
 use itertools::Itertools;
 use tempfile::NamedTempFile;
+use triton_vm::prelude::BFieldElement;
+use triton_vm::prelude::NonDeterminism;
+use triton_vm::prelude::PublicInput;
+use triton_vm::prelude::VMState;
+use triton_vm::prelude::bfe_vec;
+use triton_vm::prelude::triton_program;
 
 /// Wrapper around [`assert_cmd::Command`] and [`tempfile::TempDir`] to keep the
 /// temporary directory alive for the duration of the test.
@@ -140,6 +146,27 @@ fn run_program_with_non_determinism_write_output() {
 }
 
 #[test]
+fn run_program_from_initial_state() {
+    let program = triton_program! {
+        push 9 push 3 call loop halt
+        loop:
+            dup 1 dup 1 eq skiz return
+            dup 0 write_io 1
+            addi 1 recurse
+    };
+    let state = VMState::new(program, PublicInput::default(), NonDeterminism::default());
+    let state = serde_json::to_string(&state).unwrap();
+    let state_file = temp_file(state);
+    let state_path = state_file.path().to_str().unwrap();
+
+    command()
+        .args(["run", "--initial-state", state_path])
+        .assert()
+        .stdout("3, 4, 5, 6, 7, 8\n")
+        .success();
+}
+
+#[test]
 fn run_and_prove_initial_state_conflicts_with_other_arguments() {
     let conflicting_args = [
         ["--program", "b.tasm"],
@@ -267,4 +294,66 @@ fn prove_verify_program_with_non_determinism() {
         .assert()
         .stdout("")
         .success();
+}
+
+#[test]
+fn prove_verify_program_from_initial_state() {
+    let program = triton_program! {
+        dup 15 dup 15 dup 15 dup 15 dup 15
+        read_io 5
+        hash
+        push 42 write_mem 5 pop 1
+        halt
+    };
+    let public_input = PublicInput::new(bfe_vec![17, 19, 21, 23, 25]);
+    let state = VMState::new(program, public_input, NonDeterminism::default());
+    let state = serde_json::to_string(&state).unwrap();
+    let state_file = temp_file(state);
+    let state_path = state_file.path().to_str().unwrap();
+
+    let dir = tempfile::tempdir().unwrap();
+    command_in_dir(&dir)
+        .args(["prove", "--initial-state", state_path])
+        .assert()
+        .stdout("")
+        .success();
+    command_in_dir(&dir)
+        .arg("verify")
+        .assert()
+        .stdout("")
+        .success();
+}
+
+/// Create valid (claim, proof) pairs for 2 different programs. Then try to
+/// verify using the claim of the one, the proof of the other pair.
+#[test]
+fn verify_incorrect_proof() {
+    let program_for_claim = temp_file("push 0 halt");
+    let claim_file = temp_file("");
+    let claim_args = ["--claim", claim_file.path().to_str().unwrap()];
+    command()
+        .arg("prove")
+        .args(["--program", program_for_claim.path().to_str().unwrap()])
+        .args(claim_args)
+        .assert()
+        .success();
+
+    let program_for_proof = temp_file("push 1 halt");
+    let proof_file = temp_file("");
+    let proof_args = ["--proof", proof_file.path().to_str().unwrap()];
+    command()
+        .arg("prove")
+        .args(["--program", program_for_proof.path().to_str().unwrap()])
+        .args(proof_args)
+        .assert()
+        .success();
+
+    command()
+        .arg("verify")
+        .args(claim_args)
+        .args(proof_args)
+        .assert()
+        .stdout("")
+        .stderr("")
+        .failure();
 }
