@@ -1,3 +1,13 @@
+use anyhow::Result;
+use anyhow::anyhow;
+use anyhow::bail;
+use fs_err as fs;
+use triton_vm::prelude::BFieldElement;
+use triton_vm::prelude::NonDeterminism;
+use triton_vm::prelude::Program;
+use triton_vm::prelude::PublicInput;
+use triton_vm::prelude::VMState;
+
 #[derive(Debug, Clone, Eq, PartialEq, clap::Parser)]
 #[command(version, about)]
 pub enum Command {
@@ -98,4 +108,62 @@ pub struct ProofArtifacts {
 
     #[arg(long, value_name = "file", default_value_t = String::from("triton.proof"))]
     pub proof: String,
+}
+
+impl RunArgs {
+    pub fn parse(self) -> Result<VMState> {
+        if let Some(initial_state) = self.initial_state {
+            let file = fs::File::open(initial_state)?;
+            let reader = std::io::BufReader::new(file);
+            return Ok(serde_json::from_reader(reader)?);
+        }
+
+        let SeparateFilesRunArgs {
+            program,
+            public_input,
+            non_determinism,
+        } = self.separate_files;
+
+        let Some(program) = program else {
+            bail!("error: either argument “initial state” or ”program“ must be supplied");
+        };
+        let code = fs::read_to_string(program)?;
+
+        // own the error to work around lifetime issues
+        let program = Program::from_code(&code).map_err(|err| anyhow!("{err}"))?;
+
+        let public_input = public_input
+            .map(|args| args.parse())
+            .transpose()?
+            .unwrap_or_default();
+        let non_determinism = if let Some(non_det) = non_determinism {
+            let non_det_file = fs::File::open(non_det)?;
+            let non_det_reader = std::io::BufReader::new(non_det_file);
+            serde_json::from_reader(non_det_reader)?
+        } else {
+            NonDeterminism::default()
+        };
+
+        Ok(VMState::new(program, public_input, non_determinism))
+    }
+}
+
+impl InputArgs {
+    pub fn parse(self) -> Result<PublicInput> {
+        let input = if let Some(input_file) = self.input_file {
+            fs::read_to_string(input_file)?
+        } else if let Some(input) = self.input {
+            input
+        } else {
+            return Ok(PublicInput::default());
+        };
+
+        let input = input
+            .split(',')
+            .map(|i| i.trim().parse())
+            .collect::<Result<Vec<i64>, _>>()?;
+        let input = input.into_iter().map(BFieldElement::from).collect();
+
+        Ok(PublicInput::new(input))
+    }
 }
