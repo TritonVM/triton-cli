@@ -132,28 +132,42 @@ impl RunArgs {
             public_input,
             non_determinism,
         } = self.separate_files;
-
         let Some(program) = program else {
             bail!("error: either argument “initial state” or ”program“ must be supplied");
         };
-        let code = fs::read_to_string(program)?;
+
+        let program = Self::parse_program(program)?;
+        let public_input = Self::parse_public_input(public_input)?;
+        let non_determinism = Self::parse_non_determinism(non_determinism)?;
+
+        Ok(VMState::new(program, public_input, non_determinism))
+    }
+
+    fn parse_program(path: String) -> Result<Program> {
+        let code = fs::read_to_string(path)?;
 
         // own the error to work around lifetime issues
         let program = Program::from_code(&code).map_err(|err| anyhow!("{err}"))?;
 
-        let public_input = public_input
-            .map(|args| args.parse())
-            .transpose()?
-            .unwrap_or_default();
-        let non_determinism = if let Some(non_det) = non_determinism {
-            let non_det_file = fs::File::open(non_det)?;
-            let non_det_reader = std::io::BufReader::new(non_det_file);
-            serde_json::from_reader(non_det_reader)?
-        } else {
-            NonDeterminism::default()
+        Ok(program)
+    }
+
+    fn parse_public_input(public_input: Option<InputArgs>) -> Result<PublicInput> {
+        let Some(input_args) = public_input else {
+            return Ok(PublicInput::default());
         };
 
-        Ok(VMState::new(program, public_input, non_determinism))
+        input_args.parse()
+    }
+
+    fn parse_non_determinism(non_determinism: Option<String>) -> Result<NonDeterminism> {
+        let Some(path) = non_determinism else {
+            return Ok(NonDeterminism::default());
+        };
+        let file = fs::File::open(path)?;
+        let reader = std::io::BufReader::new(file);
+
+        Ok(serde_json::from_reader(reader)?)
     }
 }
 
