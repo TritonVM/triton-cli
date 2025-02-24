@@ -1,0 +1,4 @@
+# Temporary workaround for `dist`. For details & status, see:
+# https://github.com/axodotdev/cargo-dist/issues/1769
+[toolchain]
+channel = "1.85"
