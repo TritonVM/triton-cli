@@ -2,10 +2,10 @@ use std::process::ExitCode;
 
 use anyhow::Result;
 use clap::Parser;
-use fs_err as fs;
 use itertools::Itertools;
 use triton_vm::prelude::NonDeterminism;
 use triton_vm::prelude::PublicInput;
+use triton_vm::prelude::Stark;
 
 use crate::args::Command;
 use crate::args::ProofArtifacts;
@@ -40,24 +40,14 @@ fn prove(args: RunArgs, artifacts: ProofArtifacts) -> Result<ExitCode> {
         .with_digests(vm_state.secret_digests)
         .with_ram(vm_state.ram);
     let (_, claim, proof) = triton_vm::prove_program(vm_state.program, input, non_determinism)?;
-
-    let claim_file = fs::File::create(artifacts.claim)?;
-    serde_json::to_writer(claim_file, &claim)?;
-
-    let proof_file = fs::File::create(artifacts.proof)?;
-    bincode::serialize_into(proof_file, &proof)?;
+    artifacts.write(&claim, &proof)?;
 
     Ok(ExitCode::SUCCESS)
 }
 
 fn verify(artifacts: ProofArtifacts) -> Result<ExitCode> {
-    let claim_file = fs::File::open(artifacts.claim)?;
-    let claim = serde_json::from_reader(claim_file)?;
-
-    let proof_file = fs::File::open(artifacts.proof)?;
-    let proof = bincode::deserialize_from(proof_file)?;
-
-    if triton_vm::verify(triton_vm::stark::Stark::default(), &claim, &proof) {
+    let (claim, proof) = artifacts.read()?;
+    if triton_vm::verify(Stark::default(), &claim, &proof) {
         Ok(ExitCode::SUCCESS)
     } else {
         Ok(ExitCode::FAILURE)

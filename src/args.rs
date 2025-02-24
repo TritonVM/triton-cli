@@ -3,8 +3,10 @@ use anyhow::anyhow;
 use anyhow::bail;
 use fs_err as fs;
 use triton_vm::prelude::BFieldElement;
+use triton_vm::prelude::Claim;
 use triton_vm::prelude::NonDeterminism;
 use triton_vm::prelude::Program;
+use triton_vm::prelude::Proof;
 use triton_vm::prelude::PublicInput;
 use triton_vm::prelude::VMState;
 
@@ -165,5 +167,27 @@ impl InputArgs {
         let input = input.into_iter().map(BFieldElement::from).collect();
 
         Ok(PublicInput::new(input))
+    }
+}
+
+impl ProofArtifacts {
+    pub fn read(&self) -> Result<(Claim, Proof)> {
+        let claim_file = fs::File::open(&self.claim)?;
+        let claim = serde_json::from_reader(claim_file)?;
+
+        let proof_file = fs::File::open(&self.proof)?;
+        let proof = bincode::deserialize_from(proof_file)?;
+
+        Ok((claim, proof))
+    }
+
+    pub fn write(&self, claim: &Claim, proof: &Proof) -> Result<()> {
+        let claim_file = fs::File::create(&self.claim)?;
+        serde_json::to_writer(claim_file, claim)?;
+
+        let proof_file = fs::File::create(&self.proof)?;
+        bincode::serialize_into(proof_file, proof)?;
+
+        Ok(())
     }
 }
