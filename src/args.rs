@@ -16,11 +16,8 @@ pub enum Command {
     ///
     /// Run a program to completion, then print the computed result to stdout. Uses
     /// the given input (inline or from a file) and (optional) non-determinism.
-    /// If the program does not terminate gracefully, i.e., with instruction `halt`,
-    /// the corresponding error is printed to stderr.
-    ///
-    /// Argument “initial state” conflicts with all of “program”, “input”, “input
-    /// file”, and “non-determinism”. Argument “input” conflicts with “input file”.
+    /// If the program does not terminate gracefully, the corresponding error is
+    /// printed to stderr.
     Run(RunArgs),
 
     /// Produce a STARK proof and a corresponding claim, attesting to the correct
@@ -30,13 +27,9 @@ pub enum Command {
     /// elements. If the provided public input or secret input contains elements
     /// larger than this, proof generation will be aborted.
     ///
-    /// The program executed by Triton VM must terminate gracefully, i.e., with
-    /// instruction `halt`. If the program crashes, _e.g._, due to an out-of-bounds
-    /// instruction pointer or a failing `assert` instruction, proof generation will
-    /// fail.
-    ///
-    /// Argument “initial state” conflicts with all of “program”, “input”, “input
-    /// file”, and “non-determinism”. Argument “input” conflicts with “input file”.
+    /// The program executed by Triton VM must terminate gracefully. If the program
+    /// crashes, _e.g._, due to an out-of-bounds instruction pointer or a failing
+    /// `assert` instruction, proof generation will fail.
     Prove {
         #[command(flatten)]
         args: RunArgs,
@@ -66,6 +59,9 @@ pub enum Command {
 // - <https://github.com/clap-rs/clap/pull/5700>
 #[derive(Debug, Clone, Eq, PartialEq, clap::Args)]
 pub struct RunArgs {
+    /// The entire initial state, json-encoded. Easiest to obtain programmatically.
+    ///
+    /// Conflicts with “program”, “input”, “input file”, and “non-determinism”.
     #[arg(
         long,
         conflicts_with = "program",
@@ -82,12 +78,14 @@ pub struct RunArgs {
 
 #[derive(Debug, Clone, Eq, PartialEq, clap::Args)]
 pub struct SeparateFilesRunArgs {
+    /// A file containing a list of Triton instructions.
     #[arg(long, value_name = "file")]
     pub program: Option<String>,
 
     #[command(flatten)]
     pub public_input: Option<InputArgs>,
 
+    /// A file containing the entire non-determinism, json-encoded.
     #[arg(long)]
     pub non_determinism: Option<String>,
 }
@@ -95,18 +93,28 @@ pub struct SeparateFilesRunArgs {
 // Another “fake enum” – see `RunArgs` for a more detailed explanation.
 #[derive(Debug, Clone, Eq, PartialEq, clap::Args)]
 pub struct InputArgs {
+    /// A comma-separated list of the base field elements the program can use as its
+    /// public input.
+    ///
+    /// Conflicts with “input file”.
     #[arg(long, conflicts_with = "input_file")]
     pub input: Option<String>,
 
+    /// A file containing a comma-separated list of base field elements the program
+    /// can use as its input.
+    ///
+    /// Conflicts with “input”.
     #[arg(long, value_name = "file")]
     pub input_file: Option<String>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, clap::Args)]
 pub struct ProofArtifacts {
+    /// The file of the claim that is to be proven or verified.
     #[arg(long, value_name = "file", default_value_t = String::from("triton.claim"))]
     pub claim: String,
 
+    /// The file of the proof for the claim that is to be proven or verified.
     #[arg(long, value_name = "file", default_value_t = String::from("triton.proof"))]
     pub proof: String,
 }
