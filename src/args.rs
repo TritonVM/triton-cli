@@ -2,7 +2,6 @@ use anyhow::Result;
 use anyhow::anyhow;
 use anyhow::bail;
 use fs_err as fs;
-use triton_vm::prelude::BFieldElement;
 use triton_vm::prelude::Claim;
 use triton_vm::prelude::NonDeterminism;
 use triton_vm::prelude::Program;
@@ -152,19 +151,15 @@ impl RunArgs {
 
 impl InputArgs {
     pub fn parse(self) -> Result<PublicInput> {
-        let input = if let Some(input_file) = self.input_file {
-            fs::read_to_string(input_file)?
-        } else if let Some(input) = self.input {
-            input
-        } else {
-            return Ok(PublicInput::default());
-        };
-
-        let input = input
+        let input = self
+            .input_file
+            .map(fs::read_to_string)
+            .transpose()?
+            .or(self.input)
+            .unwrap_or_default()
             .split(',')
             .map(|i| i.trim().parse())
-            .collect::<Result<Vec<i64>, _>>()?;
-        let input = input.into_iter().map(BFieldElement::from).collect();
+            .collect::<Result<_, _>>()?;
 
         Ok(PublicInput::new(input))
     }

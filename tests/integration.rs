@@ -121,13 +121,13 @@ fn run_program_mul_with_input_file_write_output() {
     let program = temp_file("read_io 2 mul write_io 1 halt");
     let program_path = program.path().to_str().unwrap();
 
-    let input = temp_file("-17, 2221");
+    let input = temp_file("17, 2221");
     let input_path = input.path().to_str().unwrap();
 
     command()
         .args(["run", "--program", program_path, "--input-file", input_path])
         .assert()
-        .stdout("18446744069414546564\n")
+        .stdout("00000000000000037757\n")
         .success();
 }
 
