@@ -70,6 +70,7 @@ fn temp_file(content: impl std::fmt::Display) -> NamedTempFile {
 #[test]
 fn help() {
     command().arg("help").assert().success();
+    command().arg("--profile").arg("help").assert().success();
 }
 
 #[test]
@@ -89,6 +90,28 @@ fn run_trivial_program() {
         .args(["run", "--program", program.path().to_str().unwrap()])
         .assert()
         .stdout("")
+        .stderr("")
+        .success();
+}
+
+#[test]
+fn run_and_profile_program_with_call_graph() {
+    let program = temp_file(triton_program!(
+        call a halt
+        a: call b return
+        b: call c return
+        c: push 0 push 0 lt write_mem 1 return
+    ));
+
+    command()
+        .args(["--profile", "run"])
+        .args(["--program", program.path().to_str().unwrap()])
+        .assert()
+        .stdout(predicates::str::contains("| a"))
+        .stdout(predicates::str::contains("| ··b"))
+        .stdout(predicates::str::contains("| ····c"))
+        .stdout(predicates::str::contains("| Total"))
+        .stderr("")
         .success();
 }
 
@@ -113,6 +136,21 @@ fn run_program_add_with_input_write_output() {
         .args(["run", "--program", program_path, "--input", "42,58"])
         .assert()
         .stdout("100\n")
+        .success();
+}
+
+#[test]
+fn run_and_profile_program_add_with_input_write_output() {
+    let program = temp_file("read_io 2 add write_io 1 halt");
+
+    command()
+        .args(["--profile", "run"])
+        .args(["--program", program.path().to_str().unwrap()])
+        .args(["--input", "42,58"])
+        .assert()
+        .stdout(predicates::str::contains("| Total"))
+        .stdout(predicates::str::contains("100\n"))
+        .stderr("")
         .success();
 }
 
@@ -207,6 +245,26 @@ fn prove_verify_trivial_program() {
 }
 
 #[test]
+fn prove_verify_and_profile_trivial_program() {
+    let program = temp_file("halt");
+
+    let dir = tempfile::tempdir().unwrap();
+    command_in_dir(&dir)
+        .args(["--profile", "prove"])
+        .args(["--program", program.path().to_str().unwrap()])
+        .assert()
+        .stdout(predicates::str::contains("### Triton VM – Prove"))
+        .stderr("")
+        .success();
+    command_in_dir(&dir)
+        .args(["--profile", "verify"])
+        .assert()
+        .stdout(predicates::str::contains("### Triton VM – Verify"))
+        .stderr("")
+        .success();
+}
+
+#[test]
 fn prove_verify_trivial_program_to_dedicated_files() {
     let program = temp_file("halt");
     let claim_file = temp_file("");
@@ -248,6 +306,27 @@ fn prove_verify_program_with_input() {
         .arg("verify")
         .assert()
         .stdout("")
+        .success();
+}
+
+#[test]
+fn prove_verify_and_profile_program_with_input() {
+    let program = temp_file("read_io 1 push 42 eq assert halt");
+
+    let dir = tempfile::tempdir().unwrap();
+    command_in_dir(&dir)
+        .args(["--profile", "prove"])
+        .args(["--program", program.path().to_str().unwrap()])
+        .args(["--input", "42"])
+        .assert()
+        .stdout(predicates::str::contains("### Triton VM – Prove"))
+        .stderr("")
+        .success();
+    command_in_dir(&dir)
+        .args(["--profile", "verify"])
+        .assert()
+        .stdout(predicates::str::contains("### Triton VM – Verify"))
+        .stderr("")
         .success();
 }
 
