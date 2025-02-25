@@ -11,6 +11,15 @@ use triton_vm::prelude::VMState;
 
 #[derive(Debug, Clone, Eq, PartialEq, clap::Parser)]
 #[command(version, about)]
+pub struct Args {
+    #[command(flatten)]
+    pub flags: Flags,
+
+    #[command(subcommand)]
+    pub command: Command,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, clap::Subcommand)]
 pub enum Command {
     /// Execute a Triton VM program.
     ///
@@ -43,6 +52,13 @@ pub enum Command {
     Verify(ProofArtifacts),
 }
 
+#[derive(Debug, Clone, Eq, PartialEq, clap::Args)]
+pub struct Flags {
+    /// Print command-dependent profiling information.
+    #[arg(long, default_value_t = false)]
+    pub profile: bool,
+}
+
 /// The arguments required for executing a Triton VM program.
 //
 // Unfortunately, clap does not support deriving `clap::Args` for enums yet.
@@ -60,6 +76,11 @@ pub enum Command {
 #[derive(Debug, Clone, Eq, PartialEq, clap::Args)]
 pub struct RunArgs {
     /// The entire initial state, json-encoded. Easiest to obtain programmatically.
+    ///
+    /// Note that the initial state is not used as is. Instead, the program, public
+    /// input, and non-determinism are extracted, then used as if they were passed
+    /// separately. Any custom instruction pointer, Sponge state, etc. are
+    /// discarded, as generating a valid proof would be impossible otherwise.
     ///
     /// Conflicts with “program”, “input”, “input file”, and “non-determinism”.
     #[arg(
@@ -120,11 +141,16 @@ pub struct ProofArtifacts {
 }
 
 impl RunArgs {
-    pub fn parse(self) -> Result<VMState> {
+    pub fn parse(self) -> Result<(Program, PublicInput, NonDeterminism)> {
         if let Some(initial_state) = self.initial_state {
             let file = fs::File::open(initial_state)?;
             let reader = std::io::BufReader::new(file);
-            return Ok(serde_json::from_reader(reader)?);
+            let state: VMState = serde_json::from_reader(reader)?;
+            let input = PublicInput::new(state.public_input.into());
+            let non_determinism = NonDeterminism::new(state.secret_individual_tokens)
+                .with_digests(state.secret_digests)
+                .with_ram(state.ram);
+            return Ok((state.program, input, non_determinism));
         }
 
         let SeparateFilesRunArgs {
@@ -140,7 +166,7 @@ impl RunArgs {
         let public_input = Self::parse_public_input(public_input)?;
         let non_determinism = Self::parse_non_determinism(non_determinism)?;
 
-        Ok(VMState::new(program, public_input, non_determinism))
+        Ok((program, public_input, non_determinism))
     }
 
     fn parse_program(path: String) -> Result<Program> {
