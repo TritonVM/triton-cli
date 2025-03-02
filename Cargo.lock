@@ -1451,6 +1451,7 @@ dependencies = [
  "itertools 0.14.0",
  "predicates",
  "serde_json",
+ "strum",
  "tempfile",
  "triton-vm",
 ]
