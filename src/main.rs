@@ -3,11 +3,8 @@ use std::process::ExitCode;
 use anyhow::Result;
 use clap::Parser;
 use itertools::Itertools;
-use strum::IntoEnumIterator;
-use triton_vm::aet::AlgebraicExecutionTrace;
 use triton_vm::prelude::Claim;
 use triton_vm::prelude::Stark;
-use triton_vm::prelude::TableId;
 use triton_vm::prelude::VM;
 
 use crate::args::Args;
@@ -38,9 +35,7 @@ fn run(flags: Flags, args: RunArgs) -> Result<ExitCode> {
     let output = if flags.profile {
         let (output, profile) =
             VM::profile(program.clone(), input.clone(), non_determinism.clone())?;
-        let (aet, _) = VM::trace_execution(program, input, non_determinism)?;
         println!("{profile}\n");
-        print_aet(aet);
         output
     } else {
         VM::run(program, input, non_determinism)?
@@ -97,25 +92,10 @@ fn fri_domain_length(padded_height: usize) -> Result<usize> {
     Ok(fri.domain.length)
 }
 
-fn print_aet(aet: AlgebraicExecutionTrace) {
-    let height_str = "Height";
-    let max_height = aet.height().height;
-    let height_len = std::cmp::max(max_height.to_string().len(), height_str.len());
-
-    println!("| Table     | {: >height_len$} | Dominates |", height_str);
-    println!("|:----------|-{:->height_len$}:|----------:|", "");
-    for id in TableId::iter() {
-        let height = aet.height_of_table(id);
-        let dominates = if height == max_height { "yes" } else { "no" };
-        println!("| {id:<9} | {height:>height_len$} | {dominates:>9} |");
-    }
-    println!();
-    println!("Padded height: 2^{}", aet.padded_height().ilog2());
-}
-
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use strum::IntoEnumIterator;
+    use triton_vm::prelude::TableId;
 
     #[test]
     fn max_table_label_len_is_9() {
