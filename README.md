@@ -12,12 +12,34 @@ Triton CLI lets you
 - prove the correct execution of such programs, and
 - verify a claimed execution result.
 
+Triton CLI optionally prints command-dependent profiling information for each of these commands.
+
 You might also be interested in the [Triton TUI](https://github.com/TritonVM/triton-tui), which is
 helpful when debugging Triton programs.
 
+## Installation
+
+### From [crates.io](https://crates.io/crates/triton-cli)
+
+```sh
+cargo install triton-cli
+```
+
+### From [Github](https://github.com/TritonVM/triton-cli)
+
+```sh
+git clone https://github.com/TritonVM/triton-cli.git
+cd triton-cli
+cargo install --path .
+```
+
+### Binaries
+
+Check out the [releases page](https://github.com/TritonVM/triton-cli/releases).
+
 ## Usage
 
-### Execute a Triton program
+### Execute a Triton Program
 
 The `run` command of Triton CLI executes a Triton program to completion, but does not generate any
 proofs of correct execution. The command expects
@@ -45,11 +67,11 @@ triton-cli run --initial-state triton_state.json
 ```
 
 In either case, successful execution with graceful termination will print the computed output to
-stdout. If program causes Triton
-to [crash](https://docs.rs/triton-vm/0.48.0/triton_vm/#crashing-triton-vm), the corresponding error
-is printed to stderr.
+standard output (`stdout`). If the program causes Triton to
+[crash](https://docs.rs/triton-vm/0.48.0/triton_vm/#crashing-triton-vm), the corresponding error
+is printed to standard error (`stderr`).
 
-### Prove correct execution of a Triton program
+### Prove Correct Execution of a Triton Program
 
 The `prove` command generates a proof of correct execution of a Triton program, as well as a summary
 of what is [claimed](https://docs.rs/triton-vm/0.48.0/triton_vm/proof/struct.Claim.html). Notably,
@@ -61,31 +83,77 @@ to specify the locations of the produced proof and claim files. The additional a
 `triton.proof` and `triton.claim`, respectively. For example:
 
 ```sh
-triton-cli prove --program program.tasm --input 42,43,44 --proof program.proof
-triton-cli prove --initial-state triton_state.json --claim program.claim
+triton-cli prove --program program.tasm --input 42,43,44 --proof triton.proof
+triton-cli prove --initial-state triton_state.json --claim triton.claim
 ```
 
-Existing files will be overwritten.
+Existing files will be overwritten silently.
 
-### Verify a claimed execution result
+### Verify a Claimed Execution Result
 
 The `verify` command checks the correctness of a claimed execution result. It requires a file
 containing the claim and a file containing the proof. The default locations are `triton.claim` and
-`triton.proof`, respectively. For example:
+`triton.proof`, respectively. For example, the following are equivalent:
 
 ```sh
 triton-cli verify
-triton-cli verify --claim program.claim --proof program.proof
+triton-cli verify --claim triton.claim --proof triton.proof
 ```
 
-## Installation
+## Profiling
 
-### From [crates.io](https://crates.io/crates/triton-cli)
+Triton CLI accepts the `--profile` flag preceding any valid command. Depending on the command, a
+different kind of profile will be printed to standard out (`stdout`).
+
+- `triton-cli --profile run` prints an execution profile. This profile contains information about
+the program's subroutines and their contribution to the execution trace. This is particularly useful
+when you are developing a program and want to know its performance characteristics.
+- `triton-cli --profile prove` and `triton-cli --profile verify` print a performance profile. This
+profile lists the steps performed by Triton VM's prover and verifier, respectively, and details the
+amount of time spent overall and at each step, as well as the overall memory usage and each step's
+estimated contribution.
+
+### Identify Proving Capabilities
+
+Proving correct execution of a program is an inherently resource intensive operation. In order to
+identify the proving capabilities of your machine, you can profile the below Triton assembly program
+for different inputs in the range 16 to 31 (both inclusive).
+
+```tasm
+read_io 1
+  hint log2_padded_height: u32 = stack[0]
+
+// only log₂(padded heights) in range 16..32 are supported
+dup 0 push 15 lt assert error_id 0
+push 32 dup 1 lt assert error_id 1
+
+// compute number of spin-loop iterations to get to requested
+// padded height
+addi -15
+push 2 pow
+push 1000 mul
+  hint num_iterations = stack[0]
+
+// do the spin 🌀
+sponge_init
+call spin
+halt
+
+// BEFORE: _ num_iterations
+// AFTER:  _ 0
+spin:
+  sponge_squeeze                // _ n [_; 10]
+  write_mem 5 write_mem 4       // _ n [_; 1]
+
+  split
+  pop 2                         // _ n
+
+  dup 0 push 0 eq skiz return
+  addi -1 recurse
+```
+
+Example usage:
 
 ```sh
-cargo install triton-cli
+triton-cli --profile prove --program spin.tasm --input 16
 ```
-
-### Binaries
-
-Check out the [releases page](https://github.com/TritonVM/triton-cli/releases).
