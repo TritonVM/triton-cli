@@ -33,8 +33,7 @@ fn run(flags: Flags, args: RunArgs) -> Result<ExitCode> {
     let (program, input, non_determinism) = args.parse()?;
 
     let output = if flags.profile {
-        let (output, profile) =
-            VM::profile(program.clone(), input.clone(), non_determinism.clone())?;
+        let (output, profile) = VM::profile(program, input, non_determinism)?;
         println!("{profile}\n");
         output
     } else {
