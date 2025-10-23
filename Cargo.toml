@@ -27,7 +27,7 @@ human-panic = "2.0.2"
 itertools = "0.14.0"
 serde_json = "1.0"
 strum = "0.27.1"
-triton-vm = { version = "0.50.0", default-features = false }
+triton-vm = { version = "1.0.0", default-features = false }
 
 [dev-dependencies]
 assert_cmd = "2.0"
