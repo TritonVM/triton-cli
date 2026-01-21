@@ -88,7 +88,7 @@ fn verify(flags: Flags, artifacts: ProofArtifacts) -> Result<ExitCode> {
 
 fn fri_domain_length(padded_height: usize) -> Result<usize> {
     let fri = Stark::default().fri(padded_height)?;
-    Ok(fri.domain.length)
+    Ok(fri.domain.len())
 }
 
 #[cfg(test)]
