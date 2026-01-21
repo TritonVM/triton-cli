@@ -3,6 +3,12 @@
 All notable changes are documented in this file.
 Lines marked “(!)” indicate a breaking change.
 
+## [2.0.0](https://github.com/TritonVM/triton-cli/compare/v1.0.0..v2.0.0) - 2026-01-21
+
+### ⚙️ Miscellaneous
+
+- Upgrade dependencies ([fdb2b3f5](https://github.com/TritonVM/triton-cli/commit/fdb2b3f5))
+
 ## [1.0.0](https://github.com/TritonVM/triton-cli/compare/v0.50.0..v1.0.0) - 2025-10-23
 
 ### ⚙️ Miscellaneous
