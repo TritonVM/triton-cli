@@ -6,6 +6,7 @@ description = "Command Line Interface to run, prove, and verify programs written
 readme = "README.md"
 
 edition = "2024"
+rust-version = "1.95.0"
 authors = ["Triton Software AG"]
 license = "Apache-2.0"
 homepage = "https://triton-vm.org/"
@@ -27,7 +28,7 @@ human-panic = "2.0.2"
 itertools = "0.14.0"
 serde_json = "1.0"
 strum = "0.27.1"
-triton-vm = { version = "2.0.0", default-features = false }
+triton-vm = { version = "3.0.0", default-features = false }
 
 [dev-dependencies]
 assert_cmd = "2.0"
