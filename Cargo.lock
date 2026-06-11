@@ -1322,9 +1322,9 @@ checksum = "756daf9b1013ebe47a8776667b466417e2d4c5679d441c26230efd9ef78692db"
 
 [[package]]
 name = "triton-air"
-version = "3.0.0"
+version = "4.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "80e6cb58505a957367eab288c2d1c9357963b65d244c3868a518a7ffcdb6fe40"
+checksum = "6fd3590c1d4e7593ea82dd4948c7634f55b7883b625b564d4f5c85c895efb032"
 dependencies = [
  "arbitrary",
  "itertools",
@@ -1336,7 +1336,7 @@ dependencies = [
 
 [[package]]
 name = "triton-cli"
-version = "3.0.1"
+version = "4.0.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -1354,9 +1354,9 @@ dependencies = [
 
 [[package]]
 name = "triton-constraint-builder"
-version = "3.0.0"
+version = "4.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13821f7d62aa84342a1bd2228b654f17b43a09e2e5feb27d3949c3398e842564"
+checksum = "6c62236ba1926b6821a76c002a9b2c2a18d04f18c2b2b895e79bd5ca55b4d124"
 dependencies = [
  "itertools",
  "prettyplease",
@@ -1372,9 +1372,9 @@ dependencies = [
 
 [[package]]
 name = "triton-constraint-circuit"
-version = "3.0.0"
+version = "4.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f25b8d4522c9c763790315757349bc95c3ba01d3601da7ca1b967f962527de49"
+checksum = "ca0f73a750db396343e56cff6b0ad8269bae234a4e4df6a1b982138134073f7d"
 dependencies = [
  "arbitrary",
  "itertools",
@@ -1387,9 +1387,9 @@ dependencies = [
 
 [[package]]
 name = "triton-isa"
-version = "3.0.0"
+version = "4.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "451e6fd5114efad0ce516b0fb238e08e69316da7710cf9c93242b0da8522c5a2"
+checksum = "a90c9f799f184aeafcce0023ffec7fe8233c4deff3f4e9cc7a4c1c8b9a2661f7"
 dependencies = [
  "arbitrary",
  "get-size2",
@@ -1406,9 +1406,9 @@ dependencies = [
 
 [[package]]
 name = "triton-vm"
-version = "3.0.0"
+version = "4.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee696faa7d4b3ece4bda435894f416bbcbf097285fa301b1b47a0cf003c1a8e4"
+checksum = "2bc97882d4489746f0c94d07658c6c2c4c5e9e8525639112c5d7b6b74efe8301"
 dependencies = [
  "arbitrary",
  "colored",
